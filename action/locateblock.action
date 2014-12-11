@@ -1,0 +1,8 @@
+#goal definition
+int32 findblock
+---
+#result definition
+int32 foundOrNot
+---
+#feedback
+int32 sequenced
