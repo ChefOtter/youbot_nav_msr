@@ -39,7 +39,7 @@ class fineTuneServer(object):
 		rate = rospy.Rate(1.0)
 		
 		# goal==1 means do the fine tuning action
-		if (goal.findblock==1):
+		if (goal.goalState==1):
 			idealTurn = Twist()
 			targetAngle=0.0
 
@@ -81,16 +81,16 @@ class fineTuneServer(object):
 			robotController2.publish(stopMotion)
 			rospy.loginfo("here")	
 
-			self._result.foundOrNot=1
+			self._result.successOrNot=1
 			goalReached=1
 
 		if (goalReached):
 			robotController.publish(dontmove)
-			self._result.foundOrNot=1
+			self._result.successOrNot=1
 			rospy.loginfo("goal reached")
 			self._as.set_succeeded(self._result)
 		else:
-			self._result.foundOrNot=0
+			self._result.successOrNot=0
 
 if __name__=='__main__':
 	rospy.init_node('fineTuneServer_nonav')

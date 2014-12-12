@@ -1,4 +1,4 @@
-	#!/usr/bin/env python
+#!/usr/bin/env python
 
 import rospy
 import math
@@ -38,21 +38,37 @@ def alignSensor():
 
 	rate = rospy.Rate(1.0)
 	while not rospy.is_shutdown():
+		edgeCounter = 0
 		for i in range(len(scan.ranges)):
 			if (i>0) and (abs(scan.ranges[i] < cubeThresh)):
-				targeti = i
-				targetAngle = scan.angle_min + i*scan.angle_increment
+				if (scan.ranges[i-1]-scan.ranges[i]) > 0.5:
+					firstEdgei = i
+					rospy.loginfo("first edge")
+					firstEdgeAngle = scan.angle_min + i*scan.angle_increment
+					edgeCounter = edgeCounter + 1
+				elif (scan.ranges[i+1]-scan.ranges[i]) > 0.5:
+					secondEdgei = i
+					rospy.loginfo("second edge")
+					secondEdgeAngle = scan.angle_min + i*scan.angle_increment
+					edgeCounter = edgeCounter + 1
+		if (edgeCounter == 2):
+			blockCenterAngle = (firstEdgeAngle+secondEdgeAngle)/2.0
 
-			if (targetAngle > 0) and (abs(targetAngle) > np.pi/10):
-				not_norm_w = np.pi/10.0
+			if (blockCenterAngle > 0) and (abs(blockCenterAngle) > np.pi/10):
+				not_norm_w = np.pi/5.0
 				rospy.loginfo("turn left")
-			elif (targetAngle < 0) and (abs(targetAngle) > np.pi/10):
-				not_norm_w = -np.pi/10.0
+			elif (blockCenterAngle < 0) and (abs(blockCenterAngle) > np.pi/10):
+				not_norm_w = -np.pi/5.0
 				rospy.loginfo("turn right")
 			else:
 				not_norm_w = 0.0
+				rospy.loginfo("centered")
+		else:
+			rospy.loginfo("no block center calculated")
+			not_norm_w = 0.0
 		
 		rospy.loginfo(not_norm_w)
+		rospy.loginfo(edgeCounter)
 
 		# calculate the normalized Quaternion to send to the robot
 		q = np.array([0,0,1,not_norm_w])
