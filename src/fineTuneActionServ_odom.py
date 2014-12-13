@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# this action server controls the base through the odom frame
+
 import rospy
 import math
 import numpy as np
@@ -35,7 +37,7 @@ class fineTuneServer(object):
 
 	def execute_cb(self, goal):
 		goalReached=0
-		rate = rospy.Rate(1.0)
+		rate = rospy.Rate(10.0)
 		
 		# goal==1 means do the fine tuning action
 		if (goal.goalState==1):
@@ -86,11 +88,11 @@ class fineTuneServer(object):
 			pose = PoseStamped()
 			pose.header.stamp = rospy.Time.now()
 			
-			pose.header.frame_id = "base_footprint"
-			pose.pose.position.x=0.4
-			pose.pose.position.y=-0.05
+			pose.header.frame_id = "odom"
+			pose.pose.position.x=0.5
+			pose.pose.position.y=0.0
 			pose.pose.position.z=0.0
-			q = np.array([0,0,1,(1.5)*np.pi])
+			q = np.array([0,0,1,(1.0)*np.pi])
 			qn = q/np.linalg.norm(q)
 			pose.pose.orientation=Quaternion(*qn)
 
@@ -104,11 +106,11 @@ class fineTuneServer(object):
 			pose = PoseStamped()
 			pose.header.stamp = rospy.Time.now()
 			
-			pose.header.frame_id = "base_footprint"
-			pose.pose.position.x=0.6
-			pose.pose.position.y=-0.3
+			pose.header.frame_id = "odom"
+			pose.pose.position.x=0.5
+			pose.pose.position.y=-0.5
 			pose.pose.position.z=0.0
-			q = np.array([0,0,1,(1.5)*np.pi])
+			q = np.array([0,0,1,(1.0)*np.pi])
 			qn = q/np.linalg.norm(q)
 			pose.pose.orientation=Quaternion(*qn)
 
@@ -122,8 +124,8 @@ class fineTuneServer(object):
 			pose = PoseStamped()
 			pose.header.stamp = rospy.Time.now()
 
-			pose.header.frame_id = "base_footprint"
-			pose.pose.position.x=0.6
+			pose.header.frame_id = "odom"
+			pose.pose.position.x=0.5
 			pose.pose.position.y=0.3
 			pose.pose.position.z=0.0
 			q = np.array([0,0,1,(1.0)*np.pi])
@@ -152,6 +154,60 @@ class fineTuneServer(object):
 
 			self._result.successOrNot=1
 			goalReached=1
+		# get close enough to the block
+		elif (goal.goalState==6):
+			idealTurn = Twist()
+			targetAngle=0.0
+			cmdvel = Twist()
+
+			robotController = rospy.Publisher('cmd_vel',Twist,queue_size=10)
+
+			while (not rospy.is_shutdown()) and (goalReached == 0):
+				edgeCounter = 0		
+				for i in range(len(scan.ranges)):
+					if (i>0) and (abs(scan.ranges[i] < cubeThresh)):
+						if (scan.ranges[i-1]-scan.ranges[i]) > 0.5:
+							firstEdgei = i
+							rospy.loginfo("first edge")
+							firstEdgeAngle = scan.angle_min + i*scan.angle_increment
+							edgeCounter = edgeCounter + 1
+						elif (scan.ranges[i+1]-scan.ranges[i]) > 0.5:
+							secondEdgei = i
+							rospy.loginfo("second edge")
+							secondEdgeAngle = scan.angle_min + i*scan.angle_increment
+							edgeCounter = edgeCounter + 1
+				if (edgeCounter == 2):
+					blockCenterAngle = (firstEdgeAngle+secondEdgeAngle)/2.0
+					blockCenteri = int((firstEdgei +secondEdgei)/2)
+	
+					if (scan.ranges[blockCenteri] > 0.15):
+						cmdvel.linear.x = 0.03
+					elif (scan.ranges[blockCenteri] < 0.06):
+						cmdvel.linear.x = -0.03
+					else:
+						cmdvel.linear.x=0.0
+						goalReached = 1
+						rospy.loginfo("centered")
+				else:
+					rospy.loginfo("no block center calculated")
+					cmdvel.linear.x = 0.0
+
+				rospy.loginfo(cmdvel.linear.x)
+				rospy.loginfo(edgeCounter)
+			
+				robotController.publish(cmdvel)
+				rate.sleep()
+		# blind turn to the right
+		elif (goal.goalState==7):
+			cmdvel=Twist()
+			cmdvel.angular.z=-0.2
+			robotController = rospy.Publisher('cmd_vel',Twist,queue_size=10,latch=True)
+
+			robotController.publish(cmdvel)
+			rospy.sleep(7)
+			cmdvel.angular.z=0
+			robotController.publish(cmdvel)
+
 		# if the goal is anything else, return to the starting configuration
 		else:
 			robotController2 = rospy.Publisher('move_base_simple/goal',PoseStamped,queue_size=10,latch=True)

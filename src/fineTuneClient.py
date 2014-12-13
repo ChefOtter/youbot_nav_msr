@@ -16,18 +16,33 @@ def fineTuneClient(stateCmd):
 	goal = youbot_nav_msr.msg.locateblockGoal(goalState=stateCmd)
 	client.send_goal(goal)
 	client.wait_for_result()
-	rospy.loginfo("got here")
 	return client.get_result
 
 if __name__ == '__main__': 
     try:
     	rospy.init_node("fineTuneClient")
-    	motion1 = fineTuneClient(1)
-#	rospy.loginfo("got it")
-#	if motion1.successOrNot==1:
-#		rospy.loginfo("success 0")
-#	motion2 = fineTuneClient(1)
-#	if motion2.successOrNot==1:
-#		rospy.loginfo("success 1")
+	
+	#chunk for the left set of blocks
+#	rospy.loginfo("1st begin")
+#	motion1 = fineTuneClient(4)
+#	rospy.loginfo("1st success")
+#	rospy.sleep(10)
+
+	#chunk for the right set of blocks
+	rospy.loginfo("1st begin")
+	motion1 = fineTuneClient(3)
+	rospy.loginfo("1st success")
+	rospy.sleep(10)
+	rospy.loginfo("2nd begin")
+	motion2 = fineTuneClient(7)
+	rospy.loginfo("2nd success")
+
+	# shared code block
+	rospy.loginfo("3rd begin")
+	motion3 = fineTuneClient(1)
+	rospy.loginfo("3rd success")
+	rospy.loginfo("4th begin")
+	motion4 = fineTuneClient(6)
+	rospy.loginfo("4th success")
 	rospy.spin()
     except rospy.ROSInterruptException: pass

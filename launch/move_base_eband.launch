@@ -54,7 +54,7 @@
   <node pkg="amcl" type="amcl" name="amcl" output="screen">
   	<param name="base_frame_id" value="base_footprint" />
   </node>
-  
+
   <!-- Publish markers to visualize voxel maps 
   <node name="global_costmap_viz" pkg="costmap_2d" type="costmap_2d_markers">
     <remap from="voxel_grid" to="move_base/global_costmap/obstacle_layer/voxel_grid"/>
