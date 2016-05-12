@@ -10,7 +10,7 @@
 
 
   <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>action_lib</build_depend>
+  <build_depend>actionlib</build_depend>
   <build_depend>move_base_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>actionlib_msgs</build_depend>
